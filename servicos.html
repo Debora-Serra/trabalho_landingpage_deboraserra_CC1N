@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serviços | Débora Serra</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="/images/favicon.ico">
+
+
+
+
+</head>
+
+<body>
+
+
+    <main>
+        <div class="browser-warning">Trabalho de <u>Landing Page</u> - Conferido no Chrome <img
+                src="images/chromelogo.png" style="margin: 1px 0px -2px 2px;"> </div>
+
+        <div class="div1">
+            <h1 class="h1top"></h1>
+        </div>
+        <div class="div2">
+            <div class="playlistloa"
+                style="background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.918), rgba(43, 7, 7, 0.753)), url(images/close-up-dark-brown-laminate-floor-covering_88135-18198.png); font-family: rainyhearts; border:1px rgb(109, 79, 79) solid; height:65px; overflow: hidden; width: 120px; outline: 06px solid black;">
+                <p style="margin-bottom: 1px;">
+                    <font color="white" size="2">&nbsp;NOW PLAYING:</< /p>
+                        <div class="playlistloa" style="text-shadow: 2px 2px #000000; border:none; width:120px;">
+                            <div class="playlistloa" style="text-shadow: 2px 2px #000000; border:none; width:120px;">
+                                <center>
+                                    <p style="margin-top: 4px; margin-right: 8px; line-height: 1;">
+                                        <span color="white" size="2">
+                                            <marquee scrollamount="3" id="songName"
+                                                style="float:left; margin-bottom:7px; width: 200px;">Click the buttons
+                                                to play a song.</marquee>
+                                        </span><br>
+                                        <b style="margin-left:9px; display: inline-block; vertical-align: middle;">
+                                            <span id="prev" class="pbtn" onclick="prevSong()" style="cursor:pointer;">↞</span>
+                                            |&nbsp;&nbsp;<span id="playPause" class="pbtn" onclick="togglePlay(), toggleText()"
+                                                style="cursor:pointer;">▶</span>&nbsp;&nbsp;|
+                                            <span id="next" class="pbtn" onclick="nextSong()" style="cursor:pointer;">↠</span>
+                                        </b>
+                                        <!-- Regulador de volume ao lado dos botões -->
+                                        <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="1"
+                                            style="width: 28px; height: 4px; margin-left: 1px; display: inline-block; vertical-align: middle;"
+                                            oninput="setVolume(this.value)">
+                                    </p>
+                                </center>
+                            </div>
+                        </div>
+
+                        <script>
+                            var audio = new Audio();
+                            var currentSong = 0;
+                            var isPlaying = false;
+                            var started = false;
+                            var pausePosition = 0;
+                            var STORE_KEY = 'playerState';
+                            var songs = [
+                                { name: 'Charlie"s Here - Pizza Parlor', file: './music&video/CharliesHere.mp3' },
+                                { name: 'Dionne Warwick - Walk on By', file: './music&video/WalkonBy.mp3' },
+                                { name: 'Roxanne - George Michael', file: './music&video/Roxanne.mp3' },
+                            ];
+
+                            /* ---------- guarda o estado para a próxima página ---------- */
+                            function saveState() {
+                                try {
+                                    sessionStorage.setItem(STORE_KEY, JSON.stringify({
+                                        song: currentSong,
+                                        time: audio.src ? audio.currentTime : pausePosition,
+                                        playing: isPlaying,
+                                        started: started,
+                                        volume: audio.volume
+                                    }));
+                                } catch (e) { }
+                            }
+
+                            function toggleText() {
+                                var playPause = document.getElementById("playPause");
+                                playPause.innerHTML = isPlaying ? "❚❚" : "▶";
+                            }
+
+                            function loadSong(time) {
+                                audio.src = songs[currentSong].file;
+                                if (time) {
+                                    audio.addEventListener('loadedmetadata', function seek() {
+                                        audio.removeEventListener('loadedmetadata', seek);
+                                        audio.currentTime = time;
+                                    });
+                                }
+                            }
+
+                            function togglePlay() {
+                                if (isPlaying) {
+                                    pausePosition = audio.currentTime; // Salva o tempo atual
+                                    audio.pause();
+                                } else {
+                                    if (!audio.src) loadSong(pausePosition); // Retoma de onde parou
+                                    started = true;
+                                    audio.play();
+                                    updateSongName(songs[currentSong].name);
+                                }
+                                isPlaying = !isPlaying;
+                                saveState();
+                            }
+
+                            function nextSong() {
+                                currentSong = (currentSong + 1) % songs.length;
+                                pausePosition = 0;
+                                updateAudio();
+                            }
+
+                            function prevSong() {
+                                currentSong = (currentSong - 1 + songs.length) % songs.length;
+                                pausePosition = 0;
+                                updateAudio();
+                            }
+
+                            function updateAudio() {
+                                loadSong(pausePosition);
+                                if (isPlaying) {
+                                    audio.play();
+                                    updateSongName(songs[currentSong].name);
+                                }
+                                saveState();
+                            }
+
+                            function updateSongName(name) {
+                                document.getElementById('songName').innerText = name;
+                            }
+
+                            // Controle de volume
+                            function setVolume(value) {
+                                audio.volume = value;
+                                saveState();
+                            }
+
+                            audio.addEventListener('ended', function () {
+                                nextSong();
+                            });
+
+                            /* salva a posição enquanto toca e ao sair da página */
+                            audio.addEventListener('timeupdate', saveState);
+                            window.addEventListener('pagehide', saveState);
+                            window.addEventListener('beforeunload', saveState);
+
+                            /* ---------- restaura o estado vindo da página anterior ---------- */
+                            (function restoreState() {
+                                var s = null;
+                                try { s = JSON.parse(sessionStorage.getItem(STORE_KEY)); } catch (e) { }
+                                if (!s) return;
+
+                                currentSong = (s.song >= 0 && s.song < songs.length) ? s.song : 0;
+                                pausePosition = s.time || 0;
+
+                                if (typeof s.volume === 'number') {
+                                    audio.volume = s.volume;
+                                    document.getElementById('volumeControl').value = s.volume;
+                                }
+
+                                if (s.started) {
+                                    started = true;
+                                    loadSong(pausePosition);
+                                    updateSongName(songs[currentSong].name);
+                                }
+
+                                if (s.playing && started) {
+                                    isPlaying = true;
+                                    toggleText();
+                                    var p = audio.play();
+                                    if (p && p.catch) {
+                                        p.catch(function () {
+                                            // o navegador bloqueou o autoplay: fica pausado na mesma posição
+                                            isPlaying = false;
+                                            pausePosition = audio.currentTime || pausePosition;
+                                            toggleText();
+                                            saveState();
+                                        });
+                                    }
+                                }
+                            })();
+
+                        </script>
+            </div>
+            <div class="top">
+                <div class="divh1">
+                    <h1>DÉBORA SERRA</h1>
+                    <img class="book" src="images/book.gif" alt="book">
+                    <p style="font-size: 12px; margin: 25px 0px 0px 0px;">
+                        <i>(Trabalho&nbspde&nbspLanding&nbspPage&nbsp)</i></p>
+                </div>
+
+            </div>
+            <div class="topright">
+                <div style="display: flex; flex-direction: column;">
+                    <img style="width: 150px; margin: -20px 3px -13px 0px;" src="images/LogoUVV.png"
+                        title="Site Blinkie">
+                </div>
+                <div><img style="height: 40px; padding-right: 8px;" src="images/rose.gif" title="Site Blinkie"></div>
+            </div>
+        </div>
+        <div class="downbody">
+            <div class="divleft">
+                <div class="leftoptions">
+                    <a href="index.html">
+                        <div class="optionsitems">HOME</div>
+                    </a>
+                    <a href="curriculo.html">
+                        <div class="optionsitems">CURRÍCULO</div>
+                    </a>
+                    <a href="github.html">
+                        <div class="optionsitems">GITHUB</div>
+                    </a>
+                    <a href="servicos.html">
+                        <div class="optionsitems active">SERVIÇOS</div>
+                    </a>
+                    <a href="contato.html">
+                        <div class="optionsitems">CONTATO<img style="padding-left: 5px; margin: 0px 5px -1px 0px;"
+                                src="images/minimail2.png"></div>
+                    </a>
+
+
+
+                </div>
+                <div class="leftextra">
+                <img style="padding-left: 1px; margin: 8px 5px 0px 10px;" src="images/blinkie.gif">
+
+                <img src="images/blinkie16.png" style="margin: 2px 2px 2px 2px;">
+                <div class="quotebox" style="float: right;">
+                    <marquee
+                        style="font-family: ms ui gothic; font-size: 12px; color: #ffffff; width: 110px; margin-top:  11px ;">
+                        "Devemos ser como borboletas e ter a coragem de enfrentar a metamorfose da vida para para sermos
+                        livres" - P. VICENSOTTI</marquee>
+                </div>
+
+                <div class="calendar" id="calendar"></div>
+                <script>
+                    (function () {
+                        var meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                        var semana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                        // datas marcadas (mês-dia): as mesmas listadas no papel logo abaixo do calendário
+                        var datas = { '10-31': 'Halloween', '11-02': 'Finados', '11-15': 'Proclamação da República', '12-25': 'Natal' };
+                        var hoje = new Date();
+                        var ano = hoje.getFullYear();
+                        var mes = hoje.getMonth();
+                        var primeiro = new Date(ano, mes, 1).getDay();      // dia da semana do dia 1 (0 = domingo)
+                        var total = new Date(ano, mes + 1, 0).getDate();    // dias do mês (já considera ano bissexto)
+                        var h = '<table><tr><th colspan="7" class="cal-title">' + meses[mes] + ' ' + ano + '</th></tr><tr class="cal-week">';
+                        for (var s = 0; s < 7; s++) h += '<th>' + semana[s] + '</th>';
+                        h += '</tr>';
+                        var dia = 1 - primeiro;
+                        for (var linha = 0; linha < 6; linha++) {
+                            h += '<tr>';
+                            for (var col = 0; col < 7; col++, dia++) {
+                                if (dia < 1 || dia > total) { h += '<td>&nbsp;</td>'; continue; }
+                                var chave = ('0' + (mes + 1)).slice(-2) + '-' + ('0' + dia).slice(-2);
+                                var cls = [];
+                                var titulo = '';
+                                if (datas[chave]) { cls.push('cal-holiday'); titulo = datas[chave]; }
+                                if (dia === hoje.getDate()) { cls.push('cal-today'); titulo = 'Hoje' + (titulo ? ' · ' + titulo : ''); }
+                                h += '<td' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + (titulo ? ' title="' + titulo + '"' : '') + '>' + dia + '</td>';
+                            }
+                            h += '</tr>';
+                        }
+                        document.getElementById('calendar').innerHTML = h + '</table>';
+                    })();
+                </script>
+
+
+
+                <div class="paperbox">
+                    <img style="padding-left: 1px; margin: 8px 0px 0px 8px;" src="images/paper.png">
+                <div style="font-family: ms ui gothic; font-size: 12px; color: #494949; margin: -133px 0px 0px 17px;">
+                    <b><u>31/10/26:</u></b> Halloween<br><br>
+                    <b><u>02/11/26:</u></b> Finados<br><br>
+                    <b><u>15/11/26:</u></b> Proclamação da República (Feriado Nacional)<br><br>
+                    <b><u>25/12/26:</u></b> Natal<br><br>
+                </div>
+                </div>
+                </div>
+            </div>
+
+            <div class="divcenter">
+                <div id="servicos" class="divcenter-content"
+                    style="background-image: url(images/crossgrid.png); background-color: rgb(209, 190, 170); width: 600px;">
+                    <p class="sec-title"><b><i> -&nbsp;<u>Web design services</u> <small>(sites feitos sob
+                                    medida)</small> ---------- - - -</i></b></p>
+                    <img style="float:right;margin:10px;height:60px; image-rendering: pixelated;"
+                        src="images/rosestamp.png">
+                    <p class="eyebrow">WEB DESIGN · SERVICES</p>
+                    <p class="txt">Desenvolvimento de páginas web com foco em organização, identidade visual, navegação
+                        simples e adaptação a celulares. Os valores são estimativas para fins acadêmicos e variam
+                        conforme a complexidade.</p>
+
+                    <div class="box alt">
+                        <span class="boxhead">- <u>Tabela de preços</u> -</span>
+                        <div class="tablewrap">
+                            <table class="stack">
+                                <thead>
+                                    <tr>
+                                        <th>Plano</th>
+                                        <th>Indicado para</th>
+                                        <th>Inclui</th>
+                                        <th>Preço estimado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-label="Plano"><b>Mini Site</b><br>1–2 páginas</td>
+                                        <td data-label="Indicado para">Portfólio simples, apresentação</td>
+                                        <td data-label="Inclui">HTML, CSS, layout responsivo e links</td>
+                                        <td data-label="Preço estimado" class="price">R$ 250</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="Plano"><b>Classic Site</b><br>3–5 páginas</td>
+                                        <td data-label="Indicado para">Profissional autônomo, cafeteria, livraria</td>
+                                        <td data-label="Inclui">Até 5 páginas, menu e conteúdo organizado</td>
+                                        <td data-label="Preço estimado" class="price">R$ 500</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="Plano"><b>Plus Site</b><br>6+ páginas</td>
+                                        <td data-label="Indicado para">Pequenas empresas, escolas, academias</td>
+                                        <td data-label="Inclui">Mais páginas e seções personalizadas</td>
+                                        <td data-label="Preço estimado" class="price">A partir de R$ 800</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="Plano"><b>Dynamic Site</b></td>
+                                        <td data-label="Indicado para">Sites que atualizam ou processam dados</td>
+                                        <td data-label="Inclui">Backend, autenticação ou banco de dados conforme escopo</td>
+                                        <td data-label="Preço estimado" class="price">A partir de R$ 1.500</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="Plano"><b>Advanced Site</b></td>
+                                        <td data-label="Indicado para">Plataformas com recursos personalizados</td>
+                                        <td data-label="Inclui">Funcionalidades avançadas, painel e integrações</td>
+                                        <td data-label="Preço estimado" class="price">A partir de R$ 3.000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="txt-small">Os preços não incluem necessariamente domínio, hospedagem, manutenção,
+                            serviços pagos ou produção de conteúdo. O valor final depende do escopo.</p>
+                    </div>
+                    <div class="box">
+                        <span class="boxhead">- <u>O que posso criar?</u> -</span>
+                        <div class="cards three">
+                            <div class="minicard">
+                                <h3>Cafeterias</h3>
+                                <p>Cardápio, horário, localização e contato.</p>
+                            </div>
+                            <div class="minicard">
+                                <h3>Livrarias</h3>
+                                <p>Catálogo, novidades e informações.</p>
+                            </div>
+                            <div class="minicard">
+                                <h3>Escolas esportivas</h3>
+                                <p>Turmas, modalidades e inscrições.</p>
+                            </div>
+                            <div class="minicard">
+                                <h3>Academias</h3>
+                                <p>Planos, horários e serviços.</p>
+                            </div>
+                            <div class="minicard">
+                                <h3>Restaurantes</h3>
+                                <p>Menu, fotos, endereço e atendimento.</p>
+                            </div>
+                            <div class="minicard">
+                                <h3>Portfólios</h3>
+                                <p>Apresentação pessoal e projetos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box alt">
+                        <span class="boxhead">- <u>Modelos de Site</u> -</span>
+                        <ul class="infolist" style="margin-top: 15px;">
+                            <li><b>Estático:</b> conteúdo principalmente informativo, feito com HTML e CSS.</li>
+                            <li><b>Dinâmico:</b> conteúdo que muda conforme dados, usuários ou interações; pode exigir
+                                JavaScript e backend.</li>
+                            <li><b>Avançado:</b> sistemas com contas de usuário, painéis, integrações ou pagamentos,
+                                exigindo análise técnica.</li>
+                                <img src="images/drink4.gif" style="float: right; margin: -22px 0px 0px 0px;">
+                        </ul><a class="btn" href="contato.html">Solicitar orçamento</a>
+                    </div>
+                    <br>
+                </div>
+            </div>
+            <div class="divright">
+                <div>
+                    <div class="updates">O QUE ESTOU APRENDENDO:<img
+                            style="height: 16px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/minitv.gif">
+                    </div>
+                </div>
+                <div class="underupdate" style=" box-shadow: inset 0px 35px 55px -10px rgba(0, 0, 0, 0.616);">
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Exp. e Interface com o Usuário</span>:</span><br><br>
+                    <p>Lecionado por Susiléa Abreu.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Desenvolv. de Banco de Dados</span>:</span><br><br>
+                    <p>Lecionado por Renato Botacim.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Fundamentos da Computação</span>:</span><br><br>
+                    <p>Lecionado por Edgar Segundo.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Lógica para Computação</span>:</span><br><br>
+                    <p>Lecionado por Erlon Pinheiro.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Textos Científicos</span>:</span><br><br>
+                    <p>Lecionado por Maria Aparecida.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Construção de Software Web</span>:</span><br><br>
+                    <img src="images/fabricio.gif" style="height: 70px; float: left; border: 3px black solid;">
+                    <p style="margin: 2px 2px 2px 60px;"> Lecionado por Fabricio Ribeiro.<br><br> Professor na
+                        Universidade Vila Velha - UVV e HeadTecnologia e Inovação Openport.</p>
+
+
+
+
+                </div>
+                <div>
+                    <div class="details"><span style="text-decoration: underline; font-size: 16px;">DETAILS</span><img
+                            style="height: 16px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/chat2.gif">
+                        <span style="font-size: 12; color: rgb(255, 208, 139);"></span>
+                    </div>
+                </div>
+                <div class="underdetails" style="background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.527)), url(images/Background.png); background-size: 550px;
+                height: 330px;">
+                    <img src="images/BeachBar.gif" style="margin: 12px 30px 8px 8px;">
+                    <span class="materias" style="margin-left: 6px;"><img src="images/drink6.gif" style="margin: -5px -5px 0px 6px; float: left;">&nbsp&nbspFeito com carinho, HTML e CSS.</span><br>
+                    <hr>
+                    <div
+                        style="border: 1px white solid; width: 180px; margin: 10px 20px 20px 7px; padding: 2px 0px 2px 0px;">
+                        <p style="margin: 2px 5px 2px 5px; font-family: ms ui gothic; font-size: 12px;"><i></i>Layout
+                            inspirado nas homepages pessoais dos anos 2000.<br><br>Projeto acadêmico. Preços e exemplos
+                            de serviços são ilustrativos.</p>
+
+                    </div>
+                    <img src="images/nightperson.gif" style="margin: -10px 0px 10px 25px;">
+
+
+                </div>
+
+            </div>
+        </div>
+
+        </div>
+        <div class="footer">
+            - - - --- <a href="https://www.instagram.com/debserra.png?obrf=azRuMXp2dHhsZ2xj"><img
+                    src="images/instagramlogo.png" style="margin: 0px 3px -4px 0px;">Instagram</a> || <a
+                href="https://github.com/Debora-Serra"><img src="images/githublogo.png"
+                    style="margin: 0px 0px -4px 0px; width: 18px; image-rendering: pixelated;"> Github</a>&nbsp --- - -
+            -
+        </div>
+    </main>
+
+
+
+</body>
+
+</html>

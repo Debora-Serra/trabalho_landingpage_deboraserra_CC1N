@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Débora Serra</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="/images/favicon.ico">
+</head>
+
+<body>
+
+    
+
+
+    <main>
+        <div class="browser-warning">Trabalho de <u>Landing Page</u> - Conferido no Chrome <img
+                src="images/chromelogo.png" style="margin: 1px 0px -2px 2px;"> </div>
+
+        <div class="div1">
+            <h1 class="h1top"></h1>
+        </div>
+        <div class="div2">
+            <div class="playlistloa"
+                style="background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.918), rgba(43, 7, 7, 0.753)), url(images/close-up-dark-brown-laminate-floor-covering_88135-18198.png); font-family: rainyhearts; border:1px rgb(109, 79, 79) solid; height:65px; overflow: hidden; width: 120px; outline: 06px solid black;">
+                <p style="margin-bottom: 1px;">
+                    <font color="white" size="2">&nbsp;NOW PLAYING:</< /p>
+                        <div class="playlistloa" style="text-shadow: 2px 2px #000000; border:none; width:120px;">
+                            <div class="playlistloa" style="text-shadow: 2px 2px #000000; border:none; width:120px;">
+                                <center>
+                                    <p style="margin-top: 4px; margin-right: 8px; line-height: 1;">
+                                        <span color="white" size="2">
+                                            <marquee scrollamount="3" id="songName"
+                                                style="float:left; margin-bottom:7px; width: 200px;">Click the buttons
+                                                to play a song.</marquee>
+                                        </span><br>
+                                        <b style="margin-left:9px; display: inline-block; vertical-align: middle;">
+                                            <span id="prev" class="pbtn" onclick="prevSong()" style="cursor:pointer;">↞</span>
+                                            |&nbsp;&nbsp;<span id="playPause" class="pbtn" onclick="togglePlay(), toggleText()"
+                                                style="cursor:pointer;">▶</span>&nbsp;&nbsp;|
+                                            <span id="next" class="pbtn" onclick="nextSong()" style="cursor:pointer;">↠</span>
+                                        </b>
+                                        <!-- Regulador de volume ao lado dos botões -->
+                                        <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="1"
+                                            style="width: 28px; height: 4px; margin-left: 1px; display: inline-block; vertical-align: middle;"
+                                            oninput="setVolume(this.value)">
+                                    </p>
+                                </center>
+                            </div>
+                        </div>
+
+                        <script>
+                            var audio = new Audio();
+                            var currentSong = 0;
+                            var isPlaying = false;
+                            var started = false;
+                            var pausePosition = 0;
+                            var STORE_KEY = 'playerState';
+                            var songs = [
+                                { name: 'Charlie"s Here - Pizza Parlor', file: './music&video/CharliesHere.mp3' },
+                                { name: 'Dionne Warwick - Walk on By', file: './music&video/WalkonBy.mp3' },
+                                { name: 'Roxanne - George Michael', file: './music&video/Roxanne.mp3' },
+                            ];
+
+                            /* ---------- guarda o estado para a próxima página ---------- */
+                            function saveState() {
+                                try {
+                                    sessionStorage.setItem(STORE_KEY, JSON.stringify({
+                                        song: currentSong,
+                                        time: audio.src ? audio.currentTime : pausePosition,
+                                        playing: isPlaying,
+                                        started: started,
+                                        volume: audio.volume
+                                    }));
+                                } catch (e) { }
+                            }
+
+                            function toggleText() {
+                                var playPause = document.getElementById("playPause");
+                                playPause.innerHTML = isPlaying ? "❚❚" : "▶";
+                            }
+
+                            function loadSong(time) {
+                                audio.src = songs[currentSong].file;
+                                if (time) {
+                                    audio.addEventListener('loadedmetadata', function seek() {
+                                        audio.removeEventListener('loadedmetadata', seek);
+                                        audio.currentTime = time;
+                                    });
+                                }
+                            }
+
+                            function togglePlay() {
+                                if (isPlaying) {
+                                    pausePosition = audio.currentTime; // Salva o tempo atual
+                                    audio.pause();
+                                } else {
+                                    if (!audio.src) loadSong(pausePosition); // Retoma de onde parou
+                                    started = true;
+                                    audio.play();
+                                    updateSongName(songs[currentSong].name);
+                                }
+                                isPlaying = !isPlaying;
+                                saveState();
+                            }
+
+                            function nextSong() {
+                                currentSong = (currentSong + 1) % songs.length;
+                                pausePosition = 0;
+                                updateAudio();
+                            }
+
+                            function prevSong() {
+                                currentSong = (currentSong - 1 + songs.length) % songs.length;
+                                pausePosition = 0;
+                                updateAudio();
+                            }
+
+                            function updateAudio() {
+                                loadSong(pausePosition);
+                                if (isPlaying) {
+                                    audio.play();
+                                    updateSongName(songs[currentSong].name);
+                                }
+                                saveState();
+                            }
+
+                            function updateSongName(name) {
+                                document.getElementById('songName').innerText = name;
+                            }
+
+                            // Controle de volume
+                            function setVolume(value) {
+                                audio.volume = value;
+                                saveState();
+                            }
+
+                            audio.addEventListener('ended', function () {
+                                nextSong();
+                            });
+
+                            /* salva a posição enquanto toca e ao sair da página */
+                            audio.addEventListener('timeupdate', saveState);
+                            window.addEventListener('pagehide', saveState);
+                            window.addEventListener('beforeunload', saveState);
+
+                            /* ---------- restaura o estado vindo da página anterior ---------- */
+                            (function restoreState() {
+                                var s = null;
+                                try { s = JSON.parse(sessionStorage.getItem(STORE_KEY)); } catch (e) { }
+                                if (!s) return;
+
+                                currentSong = (s.song >= 0 && s.song < songs.length) ? s.song : 0;
+                                pausePosition = s.time || 0;
+
+                                if (typeof s.volume === 'number') {
+                                    audio.volume = s.volume;
+                                    document.getElementById('volumeControl').value = s.volume;
+                                }
+
+                                if (s.started) {
+                                    started = true;
+                                    loadSong(pausePosition);
+                                    updateSongName(songs[currentSong].name);
+                                }
+
+                                if (s.playing && started) {
+                                    isPlaying = true;
+                                    toggleText();
+                                    var p = audio.play();
+                                    if (p && p.catch) {
+                                        p.catch(function () {
+                                            // o navegador bloqueou o autoplay: fica pausado na mesma posição
+                                            isPlaying = false;
+                                            pausePosition = audio.currentTime || pausePosition;
+                                            toggleText();
+                                            saveState();
+                                        });
+                                    }
+                                }
+                            })();
+
+                        </script>
+            </div>
+            <div class="top">
+                <div class="divh1">
+                    <h1>DÉBORA SERRA</h1>
+                    <img class="book" src="images/book.gif" alt="book">
+                    <p style="font-size: 12px; margin: 25px 0px 0px 0px;">
+                        <i>(Trabalho&nbspde&nbspLanding&nbspPage&nbsp)</i>
+                    </p>
+                </div>
+
+            </div>
+            <div class="topright">
+                <div style="display: flex; flex-direction: column;">
+                    <img style="width: 150px; margin: -20px 3px -13px 0px;" src="images/LogoUVV.png"
+                        title="Site Blinkie">
+                </div>
+                <div><img style="height: 40px; padding-right: 8px;" src="images/rose.gif" title="Site Blinkie"></div>
+            </div>
+        </div>
+        <div class="downbody">
+            <div class="divleft">
+                <div class="leftoptions">
+                    <a href="index.html">
+                        <div class="optionsitems active">HOME</div>
+                    </a>
+                    <a href="curriculo.html">
+                        <div class="optionsitems">CURRÍCULO</div>
+                    </a>
+                    <a href="github.html">
+                        <div class="optionsitems">GITHUB</div>
+                    </a>
+                    <a href="servicos.html">
+                        <div class="optionsitems">SERVIÇOS</div>
+                    </a>
+                    <a href="contato.html">
+                        <div class="optionsitems">CONTATO<img style="padding-left: 5px; margin: 0px 5px -1px 0px;"
+                                src="images/minimail2.png"></div>
+                    </a>
+
+
+
+                </div>
+                <div class="leftextra">
+                <img style="padding-left: 1px; margin: 8px 5px 0px 10px;" src="images/blinkie.gif">
+
+                <img src="images/blinkie16.png" style="margin: 2px 2px 2px 2px;">
+                <div class="quotebox" style="float: right;">
+                    <marquee
+                        style="font-family: ms ui gothic; font-size: 12px; color: #ffffff; width: 110px; margin-top:  11px ;">
+                        "Devemos ser como borboletas e ter a coragem de enfrentar a metamorfose da vida para para sermos livres" - P. VICENSOTTI</marquee>
+                </div>
+                <div class="calendar" id="calendar"></div>
+                <script>
+                    (function () {
+                        var meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                        var semana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                        // datas marcadas (mês-dia): as mesmas listadas no papel logo abaixo do calendário
+                        var datas = { '10-31': 'Halloween', '11-02': 'Finados', '11-15': 'Proclamação da República', '12-25': 'Natal' };
+                        var hoje = new Date();
+                        var ano = hoje.getFullYear();
+                        var mes = hoje.getMonth();
+                        var primeiro = new Date(ano, mes, 1).getDay();      // dia da semana do dia 1 (0 = domingo)
+                        var total = new Date(ano, mes + 1, 0).getDate();    // dias do mês (já considera ano bissexto)
+                        var h = '<table><tr><th colspan="7" class="cal-title">' + meses[mes] + ' ' + ano + '</th></tr><tr class="cal-week">';
+                        for (var s = 0; s < 7; s++) h += '<th>' + semana[s] + '</th>';
+                        h += '</tr>';
+                        var dia = 1 - primeiro;
+                        for (var linha = 0; linha < 6; linha++) {
+                            h += '<tr>';
+                            for (var col = 0; col < 7; col++, dia++) {
+                                if (dia < 1 || dia > total) { h += '<td>&nbsp;</td>'; continue; }
+                                var chave = ('0' + (mes + 1)).slice(-2) + '-' + ('0' + dia).slice(-2);
+                                var cls = [];
+                                var titulo = '';
+                                if (datas[chave]) { cls.push('cal-holiday'); titulo = datas[chave]; }
+                                if (dia === hoje.getDate()) { cls.push('cal-today'); titulo = 'Hoje' + (titulo ? ' · ' + titulo : ''); }
+                                h += '<td' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + (titulo ? ' title="' + titulo + '"' : '') + '>' + dia + '</td>';
+                            }
+                            h += '</tr>';
+                        }
+                        document.getElementById('calendar').innerHTML = h + '</table>';
+                    })();
+                </script>
+                               
+  
+                                               
+                                            
+
+                <div class="paperbox">
+                    <img style="padding-left: 1px; margin: 8px 0px 0px 8px;" src="images/paper.png">
+                <div style="font-family: ms ui gothic; font-size: 12px; color: #494949; margin: -133px 0px 0px 17px;">
+                    <b><u>31/10/26:</u></b> Halloween<br><br>
+                    <b><u>02/11/26:</u></b> Finados<br><br>
+                    <b><u>15/11/26:</u></b> Proclamação da República (Feriado Nacional)<br><br>
+                    <b><u>25/12/26:</u></b> Natal<br><br>
+                </div>
+                </div>
+                </div>
+            </div>
+
+            <div class="divcenter">
+                <div id="homepage" class="divcenter-content"
+                    style="background-image: url(images/crossgrid.png); background-color: rgb(209, 190, 170); width: 600px;">
+                    <p class="sec-title"><b><i> -&nbsp;<u>Bem vindo!</u> ---------- - - -</i></b></p>
+                    <img style="float:right;margin:5px;" src="images/rosestamp.gif">
+                    <p class="eyebrow">✧ HELLO, WORLD! ✧</p>
+                    <p class="txt"><b>Bem-vindo ao meu canto da internet!</b></p>
+                    <p class="txt">Oi!
+                        Este site reúne um pouco da minha trajetória acadêmica, meus interesses, meus objetivos
+                        profissionais e alguns serviços de desenvolvimento web que pretendo oferecer.</p>
+
+                    <div class="sobre-box"
+                        style="border: 1px dashed #000000; background-color: rgba(255, 255, 255, 0.26); height: 154px;">
+                        <img class="sobre-foto" style="float:left; margin:12px; width: 120px; border: 5px rgb(187, 154, 134) solid; outline: 1px rgb(0, 0, 0) solid; border-image: url(images/frame3full.png) 11 round;"
+                            src="images/FotoEu.jpeg">
+
+                        <p class="sobre-title" style="color:#18100c; font-size: 13px; margin-left: 250px;"><b>- <u>Sobre mim</u>: -</b></p>
+                        <div class="sobre-tags" style="float: right; margin: -12px 20px 10px 0px;">
+                            <img style="margin:-2px;" src="images/tinytag7.png"><br>
+                            <img style="margin:-2px;" src="images/tinytag13.png"><br>
+                            <img style="margin:-2px;" src="images/tinytag17.png"><br>
+                            <img style="margin:-2px;" src="images/tinytag18.png"><br>
+                            <img style="margin:-2px;" src="images/tinytag19.png"><br>
+                            <img style="margin: 0px; border: 1px black solid;" src="images/tag5.gif"><br>
+                           
+                        </div>
+                        <ul type="square" class="sobre-list"
+                            style="font-family: ms ui gothic; font-size: 12px; margin-left: 140px; color:#000000;">
+                            <li><u>Nome</u>: Débora Serra Araújo</li>
+                            <li><u>Idade</u>: 20</li>
+                            <li><u>Aniversário</u>: 28/03</li>
+                            <li><u>Naturalidade</u>: Vitória - ES</li>
+                            <li><u>Estuda</u>: Ciência da Computação</li>
+                        </ul>
+
+
+                    </div>
+
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>Sobre mim</u> ---------- - -
+                                -</i></b></p>
+                    <p class="txt">Gosto de aprender coisas novas e combinar áreas diferentes. Fora da tecnologia, tenho interesse em desenho digital, criação de histórias/quadrinhos, música e piano. Essas atividades também ajudam a desenvolver criatividade, observação e atenção aos detalhes.</p>
+                    <div class="cards">
+                        <div class="minicard">
+                            <img src="images/miniapple.gif" style="float: left; margin: 2px 6px 2px 0px;">
+                            <h3>Personal skills</h3>
+                            <p>Organização, curiosidade, criatividade, pesquisa, escrita e disposição para aprender.</p>
+                        </div>
+                        <div class="minicard">
+                            <img src="images/miniapple.gif" style="float: left; margin: 2px 6px 2px 0px;">
+                            <h3>Tech interests</h3>
+                            <p>Desenvolvimento web, lógica de programação, computação e, futuramente, áreas como dados e
+                                engenharia de software.</p>
+                        </div>
+                    </div>
+                    <ul class="tag-list">
+                        <li>Arte Digital</li>
+                        <li>Comics</li>
+                        <li>Música</li>
+                        <li>Programação</li>
+                        <li>Escrita</li>
+                    </ul>
+
+
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>Vida Acadêmica</u> ---------- - - -</i></b></p>
+                    <p class="txt">Atualmente curso Ciência da Computação na Universidade Vila Velha (UVV).</p>
+                    <div class="tablewrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Etapa</th>
+                                    <th>Instituição</th>
+                                    <th>Período</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ensino Fundamental I</td>
+                                    <td>SEB COC / Charles Darwin</td>
+                                    <td>2010-2015</td>
+                                </tr>
+                                <tr>
+                                    <td>Ensino Fundamental II</td>
+                                    <td>Colégio CEIC / UP Centro Educacional</td>
+                                    <td>2016-2020</td>
+                                </tr>
+                                <tr>
+                                    <td>Ensino Médio</td>
+                                    <td>UP Centro Educacional</td>
+                                    <td>2021-2023</td>
+                                </tr>
+                                <tr>
+                                    <td>Ensino Superior</td>
+                                    <td>UVV — Ciência da Computação</td>
+                                    <td>2026 – atual</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>O que estou aprendendo</u>
+                                <small>(matérias da faculdade)</small> ---------- - - -</i></b></p>
+                    <div class="cards">
+                        <div class="minicard">
+                            <h3>Experiência e Interface com o Usuário</h3>
+                            <p>Estuda como criar interfaces digitais intuitivas, acessíveis e agradáveis, proporcionando uma boa experiência aos usuários.</p>
+                        </div>
+                        <div class="minicard">
+                            <h3>Desenvolvimento de Banco de Dados</h3>
+                            <p>Ensina a modelar, criar, organizar e manipular bancos de dados para armazenar e consultar informações.</p>
+                        </div>
+                        <div class="minicard">
+                            <h3>Fundamentos da Computação</h3>
+                            <p>Apresenta os conceitos básicos da computação, incluindo a história dos computadores, seus componentes e os princípios de funcionamento dos sistemas computacionais.</p>
+                        </div>
+                        <div class="minicard">
+                            <h3>Lógica para Computação</h3>
+                            <p>Desenvolve o raciocínio lógico e ensina a criar algoritmos para resolver problemas computacionais.</p>
+                        </div>
+                        <div class="minicard">
+                            <h3>Textos Científicos</h3>
+                            <p>Ensina a produzir, estruturar e formatar textos acadêmicos e científicos seguindo normas e metodologias de pesquisa.</p>
+                        </div>
+                        <div class="minicard">
+                            <h3>Construção de Software Web</h3>
+                            <p>Aborda o desenvolvimento de sites e aplicações para a internet utilizando tecnologias como HTML, CSS e JavaScript.</p>
+                        </div>
+                    </div>
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>Objetivos Profissionais</u> ---------- - - -</i></b></p>
+                    <p class="txt">Quero construir uma base sólida em programação, participar de projetos colaborativos
+                        e desenvolver um portfólio que demonstre minha evolução. Tenho interesse em explorar
+                        oportunidades de estágio e aprofundar meus conhecimentos em desenvolvimento de software e
+                        engenharia de dados.</p>
+                    <p class="txt">Também quero continuar criando projetos autorais que unam tecnologia e arte.</p>
+                    <div class="callout"><b>No momento:</b> estudando, praticando e construindo meus primeiros projetos
+                        para a web.</div>
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>Eventos e Experiências</u> ---------- - - -</i></b></p>
+                    
+                    <div class="indent" style="width: 260px; margin: 0px 0px -15px 120px;">
+                        
+                    <ul class="txt" type="square">
+                        <li><b>UP VV:</b> Prêmio Prata na Feira de Ciência do UP VV em 2018.</li>
+
+                        <li><b>OBA 2016:</b> Ganhadora de medalha de Ouro na Olimpíada Brasileira de Astrologia (OBA) <a href="downloads/OBA 2016 Darwin.pdf" download>(pdf)</a></a></li>
+
+                        <li><b>UVV:</b> Modelagem de Banco de Dados — Sistema de Milhas — trabalho acadêmico: construção do minimundo, MER e modelo lógico.</li>
+
+                    </ul>
+                    
+                    
+
+                    
+                    </div>
+                    <img class="dog" src="images/dog.gif" style="float: right; margin: -46px 6px 6px 0px;">
+
+                    <p class="sec-title" style="margin-top: 22px;"><b><i> -&nbsp;<u>Extras</u><small>&nbsp; (Interesses pessoais)</small> ---------- - - -</i></b></p>
+
+                    <p class="txt">Aqui ficam os meus extras: trilha sonora, filmes/séries e um clipe de música.</p>
+                    
+                    <div class="box alt extras" style="height: 546px;">
+                        <span class="boxhead">- <u>Gêneros Musicais</u> -</span>
+                        <ul class="infolist" style="margin-top: 15px;">
+                            <span style="float: left;">
+                            <li>70s-2010s Pop, Downtempo/Jazz, Synthpop, House, Eurodance/Eurohouse/Trance, Dance/Eletrônica, Pop Rock/Indie Rock/Alternative, Alguns MPBs.</li>                           
+                        </ul><br>
+    
+                        <br><br>
+                        <span class="boxhead">- <u>Bandas/Músicos</u> -</span>
+                        <ul class="infolist" style="margin-top: 15px;">
+                            <span style="float: left;">
+                            <li>Mike Patton</li>
+                            <li>Mr. Bungle/Peeping Tom</li>
+                            <li>Calvin Harris</li>
+                            <li>Massive Attack</li>              
+                        </ul>   
+                        <ul class="infolist"  style="margin: 0px 0px 0px 220px;">
+                            <li>Duran Duran</li>
+                            <li>P!nk</li>
+                            <li>TV on the Radio</li>
+                            <li>David Guetta/Chris Willis</li>
+                            </span>
+                        </ul><br>
+
+                        <span class="boxhead">- <u>Músicas</u> -</span>
+                        
+
+                        <ul class="infolist" style="margin-top: 15px;">
+                            <span style="float: left;">
+                            <li><a href="https://www.youtube.com/watch?v=BPX8H6tE_iA" target="_blank">Journal of Ardency - Class Actress</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=3r8EkbN3DCk" target="_blank">Pink Cigarette - Mr. Bungle</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=NvsupX2mDyE" target="_blank">Lucy - Jealousy</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=Q4MymPStabI" target="_blank">Blind - Hercules (Frankie Remix)</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=xJbxi9RWRj0" target="_blank">Right On! - Silicone Soul</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=uyIiqurkxiI" target="_blank">Cruel Game - Nouvelle (Vanzetti Remix)</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=1x_Nl_yNPds" target="_blank">Remember Our Love - Dionne Bromfield</a></li>
+                        </ul><br><br>
+                        <div class="vidwrap" style="float: left; margin: 20px 20px 20px 92px; border: 5px rgb(187, 154, 134) solid; outline: 1px rgb(0, 0, 0) solid; border-image: url(images/frame3full.png) 11 round;">
+                            <video width="300px" controls playsinline>
+                            <source src="music&video/ForgetHer.mp4" type="video/mp4">
+                            </video>
+                           </div>
+                           
+    
+                        <ul class="infolist"  style="margin: -25px 0px 0px 240px;">
+                            <li><a href="https://www.youtube.com/watch?v=ZWmrfgj0MZI" target="_blank">Unfinished Sympathy - Massive Attack</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=azuWkG_10SQMil" target="_blank">Mil  e Uma Noites de Amor - Pepeu Gomes</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=um06u9Zg8ww" target="_blank">Be Thankful for What You Got - Massive Attack</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=6gx_xaiNies" target="_blank">Hurt - Under My Black Wings</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=7lvMNLhJrb0" target="_blank">Evidence - Faith No More</a></li>
+                            <li><a href="https://www.youtube.com/watch?v=eQIsBeLEYDw" target="_blank">Lavinia - The Veils</a></li>
+                                
+                            </span>
+                            
+                            
+                            
+                        </ul><br>
+                        <div class="vidcap" style="margin: -14px 0px 0px 90px; float: left;">
+                        <span style="color: black; font-weight: bold;">Forget Her - Jeff Buckley</span></div>
+
+                         
+                        
+                    </div>
+                    <div class="box filmes">
+                        <span class="boxhead">- <u>Filmes/Séries</u> -</span>
+                        <div style="float: left;">
+                        <ul class="infolist">
+                            <li>Demolidor (2015)<img style="height: 19px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/demolidor.gif"></li>
+                            <li>A Máscara do Zorro (1998)<img style="height: 19px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/zorro.png"></li>
+                            <li>Road House (2024)</li>
+                            <li>A vida de Chuck (2024)</li>
+                            <li>Valerian e a Cidade dos Mil Planetas (2017)</li>
+                            <li>Alita: Anjo de Combate (2019)</li>
+                            <li>Moulin Rouge (2001)</li>
+                            <li>Barry (2018)</li>
+                            <li>Um Toque de Vida (2007)</li></ul>
+                        </div>
+                        <div>
+                        <ul class="infolist" style="margin: 14px 0px 0px 290px;">
+                            <li>Magnatas do Crime (2024)</li>
+                            <li>Dupla Perigosa (2026)</li>
+                            <li>Wolfs (2024)</li>  
+                            <li>Jogador Número 1 (2018)</li>
+                            <li>No Limite do Amanhã (2014)</li>
+                            <li>Dublê de Anjo (2006)</li>
+                            <li>O Mentalista (2008)</li>
+                            <li>Dexter (2006)<img style="height: 15px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/miniblood.gif"></li>
+                            <li>John Carter (2012)</li></ul>
+                        </div>   
+                    </div>
+                    
+                    
+
+                    
+                    
+
+                    
+                    
+
+                    <a class="btn" href="curriculo.html">Conheça meu perfil →</a>
+                </div>
+            </div>
+            <div class="divright">
+                <div>
+                    <div class="updates">DOCENTES:<img
+                            style="height: 16px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/minitv.gif">
+                    </div>
+                </div>
+                <div class="underupdate" style=" box-shadow: inset 0px 35px 55px -10px rgba(0, 0, 0, 0.616);">
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Exp. e Interface com o Usuário</span>:</span><br><br>
+                    <p>Lecionado por Susiléa Abreu.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Desenvolv. de Banco de Dados</span>:</span><br><br>
+                    <p>Lecionado por Renato Botacim.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Fundamentos da Computação</span>:</span><br><br>
+                    <p>Lecionado por Edgar Segundo.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Lógica para Computação</span>:</span><br><br>
+                    <p>Lecionado por Erlon Pinheiro.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Textos Científicos</span>:</span><br><br>
+                    <p>Lecionado por Maria Aparecida.</p>
+                    <span class="materias"><img src="images/minirose2.gif" height="10px">&nbsp&nbsp<span
+                            style="text-decoration: underline;">Construção de Software Web</span>:</span><br><br>
+                    <img src="images/fabricio.gif" style="height: 70px; float: left; border: 3px black solid;">
+                    <p style="margin: 2px 2px 2px 60px;"> Lecionado por Fabricio Ribeiro.<br><br> Professor na
+                        Universidade Vila Velha - UVV e HeadTecnologia e Inovação Openport.</p>
+
+
+
+
+                </div>
+                <div>
+                    <div class="details"><span style="text-decoration: underline; font-size: 16px;">DETALHES</span><img
+                            style="height: 16px; padding-left: 5px; margin: -3px 0px -3px 0px;" src="images/chat2.gif">
+                        <span style="font-size: 12; color: rgb(255, 208, 139);"></span>
+                    </div>
+                </div>
+                <div class="underdetails" style="background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.527)), url(images/Background.png); background-size: 550px;
+                height: 330px;">
+                    <img src="images/BeachBar.gif" style="margin: 12px 30px 8px 8px;">
+                    <span class="materias" style="margin-left: 6px;"><img src="images/drink6.gif" style="margin: -5px -5px 0px 6px; float: left;">&nbsp&nbspFeito com carinho, HTML e CSS.</span><br>
+                    <hr>
+                    <div
+                        style="border: 1px white solid; width: 180px; margin: 10px 20px 20px 7px; padding: 2px 0px 2px 0px;">
+                        <p style="margin: 2px 5px 2px 5px; font-family: ms ui gothic; font-size: 12px;"><i></i>Layout
+                            inspirado nas homepages pessoais dos anos 2000.<br><br>Projeto acadêmico. Preços e exemplos
+                            de serviços são ilustrativos.</p>
+
+                    </div>
+                    <img src="images/nightperson.gif" style="margin: -10px 0px 10px 25px;">
+
+
+                </div>
+
+
+            </div>
+
+        </div>
+        <div class="footer">
+            - - - --- <a href="https://www.instagram.com/debserra.png?obrf=azRuMXp2dHhsZ2xj"><img
+                    src="images/instagramlogo.png" style="margin: 0px 3px -4px 0px;">Instagram</a> || <a
+                href="https://github.com/Debora-Serra"><img src="images/githublogo.png"
+                    style="margin: 0px 0px -4px 0px; width: 18px; image-rendering: pixelated;"> Github</a>&nbsp --- - -
+            -
+        </div>
+    </main>
+
+
+
+</body>
+
+</html>
